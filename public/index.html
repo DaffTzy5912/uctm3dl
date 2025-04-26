@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TikTok Downloader</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      text-align: center;
+      padding: 30px;
+      background: linear-gradient(to right, #f8f9fa, #e0e0e0);
+    }
+    h1 {
+      color: #333;
+    }
+    input {
+      width: 80%;
+      padding: 10px;
+      font-size: 16px;
+      margin-top: 20px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    .buttons {
+      margin-top: 15px;
+    }
+    button {
+      padding: 10px 20px;
+      margin: 5px;
+      font-size: 16px;
+      border: none;
+      border-radius: 5px;
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .download-link {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 10px 20px;
+      background-color: #28a745;
+      color: white;
+      text-decoration: none;
+      border-radius: 5px;
+    }
+    .download-link:hover {
+      background-color: #218838;
+    }
+    #result video, #result audio {
+      margin-top: 20px;
+      width: 100%;
+      max-width: 600px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>TikTok Video & Music Downloader</h1>
+  
+  <input type="text" id="urlInput" placeholder="Tempel link TikTok di sini..." />
+  <div class="buttons">
+    <button onclick="pasteLink()">Paste</button>
+    <button onclick="clearInput()">Hapus</button>
+    <button onclick="download()">Download</button>
+  </div>
+
+  <div id="loading" style="display:none; margin-top:20px;">Sedang memproses...</div>
+  <div id="result"></div>
+
+  <script>
+    function pasteLink() {
+      navigator.clipboard.readText().then(text => {
+        document.getElementById('urlInput').value = text;
+      }).catch(err => {
+        alert('Gagal paste link: ' + err);
+      });
+    }
+
+    function clearInput() {
+      document.getElementById('urlInput').value = '';
+      document.getElementById('result').innerHTML = '';
+    }
+
+    async function download() {
+      const url = document.getElementById('urlInput').value.trim();
+      const result = document.getElementById('result');
+      const loading = document.getElementById('loading');
+
+      if (!url) {
+        alert('Masukkan link TikTok terlebih dahulu!');
+        return;
+      }
+
+      loading.style.display = 'block';
+      result.innerHTML = '';
+
+      try {
+        const response = await fetch('/api/tiktok', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ url })
+        });
+
+        const data = await response.json();
+        loading.style.display = 'none';
+
+        if (!data.success) {
+          result.innerHTML = `<p>❌ Gagal: ${data.message}</p>`;
+          return;
+        }
+
+        result.innerHTML = `
+          <p>✅ Video berhasil didapatkan:</p>
+          <video controls src="${data.videoUrl}"></video>
+          <audio controls style="margin-top:15px;">
+            <source src="${data.audioUrl}" type="audio/mpeg">
+            Browser Anda tidak mendukung audio.
+          </audio>
+          <div>
+            <a href="${data.videoUrl}" download class="download-link">Download Video</a>
+          </div>
+        `;
+        
+      } catch (error) {
+        console.error(error);
+        loading.style.display = 'none';
+        result.innerHTML = `<p>😢 Terjadi kesalahan server.</p>`;
+      }
+    }
+  </script>
+
+</body>
+</html>
